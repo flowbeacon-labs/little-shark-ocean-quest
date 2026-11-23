@@ -29,7 +29,7 @@ function loadLevel(index){level=index;score=0;lives=3;frame=0;checkpoint=110;cam
   const y=116+rand(710+i*41+index*17)*295;
   if(x<worldWidth-165)treasures.push({x,y,kind,got:false,phase:rand(855+i*29+index)*PI*2});
  }
- for(let i=0;i<7+danger*2;i++){const x=490+i*(worldWidth-950)/(6+danger*2);enemies.push({x,baseY:140+rand(index*109+i*23)*235,y:0,phase:rand(i*53+index*11)*6,alive:true,hit:0,r:22+Math.min(10,Math.floor(index/3)*4),pattern:i%3,drift:10+rand(i*31+index*9)*35,tempo:.024+rand(i*19+3)*.025});}
+ for(let i=0;i<7+danger*2;i++){const x=490+i*(worldWidth-950)/(6+danger*2);enemies.push({x,baseY:140+rand(index*109+i*23)*235,y:TOP+22+rand(i*73+index*41)*(BOTTOM-TOP-60),phase:rand(i*53+index*11)*6,alive:true,hit:0,r:22+Math.min(10,Math.floor(index/3)*4),pattern:i%3,drift:10+rand(i*31+index*9)*35,tempo:.024+rand(i*19+3)*.025});}
  for(let i=0;i<2;i++)powerups.push({x:1150+i*(worldWidth-1550)/2,y:180+((i+index)%3)*70,type:i===0?'shield':'bonus',got:false});
  updateHUD();}
 function updateHUD(){el('world').textContent=`WORLD ${Math.floor(level/3)+1} · LEVEL ${level%3+1}`;el('pearls').textContent=`⭐ ${score}`;el('hearts').textContent='❤️'.repeat(Math.max(0,lives));el('best').textContent=`BEST ${Math.max(best,score)}`;el('sound').textContent=muted?'🔇':'🔊';}
@@ -64,9 +64,9 @@ const near=(x,y,cx,cy,r)=>Math.hypot(x-cx,y-cy)<r;
 const treasureValues={shell:3,starfish:5,gem:8,chest:15};
 const treasureNames={shell:'SEASHELL',starfish:'STARFISH',gem:'GEM',chest:'TREASURE CHEST'};
 function addBurst(x,y,text){bursts.push({x,y,text,life:48});if(bursts.length>12)bursts.shift();}
-function tick(){frame++;if(mode!=='playing')return;const speed=(6.0+level*.15)*(shield?1.03:1);const yAxis=(keyState.down?1:0)-(keyState.up?1:0);player.vx=speed;player.vy=yAxis*7.1;
+function tick(){frame++;if(mode!=='playing')return;const speed=(4.3+level*.10)*(shield?1.03:1);const yAxis=(keyState.down?1:0)-(keyState.up?1:0);player.vx=speed;player.vy=yAxis*7.1;
  if(keyState.dash&&dashReady){dashTime=24;dashReady=false;sound(750,140,'sawtooth');}if(!keyState.dash)dashReady=true;
- let multiplier=dashTime>0?3.1:1;if(dashTime>0)dashTime--;
+ let multiplier=dashTime>0?2.8:1;if(dashTime>0)dashTime--;
  player.face=1;
  const prevX=player.x;player.x=Math.min(worldWidth-115,player.x+player.vx*multiplier);player.y=Math.max(TOP+20,Math.min(BOTTOM-38,player.y+player.vy));
  if(invincible>0)invincible--;
@@ -83,7 +83,18 @@ function tick(){frame++;if(mode!=='playing')return;const speed=(6.0+level*.15)*(
  }
  for(const b of bursts)b.life--;bursts=bursts.filter(b=>b.life>0);
  for(const p of powerups){if(!p.got&&near(player.x,player.y,p.x,p.y,40)){p.got=true;if(p.type==='shield'){shield=1;toast('🛡️ Bubble shield!');}else{score+=10;toast('✨ 10 bonus pearls!');}sound(910,180,'sine');}}
- for(const e of enemies){if(!e.alive)continue;e.y=e.baseY+Math.sin(frame*e.tempo*(1+level*.04)+e.phase)*(e.pattern===1?62:32);e.liveX=e.x+(e.pattern===0?0:Math.sin(frame*(e.tempo*.65)+e.phase)*e.drift);if(near(player.x,player.y,e.liveX,e.y,e.r+28)){if(dashTime>0){e.alive=false;score+=10;toast('⚡ DASH HIT! +10');sound(680,140,'triangle');}else hurt();}}
+ for(const e of enemies){if(!e.alive)continue;// Sweep across the full swimming depth, not just the middle.
+ const topEdge=TOP+22,bottomEdge=BOTTOM-38,mid=(topEdge+bottomEdge)/2,amplitude=(bottomEdge-topEdge)/2;
+ const sweepY=mid+Math.sin(frame*e.tempo*(1+level*.025)+e.phase)*amplitude;
+ e.liveX=e.x+(e.pattern===0?0:Math.sin(frame*(e.tempo*.65)+e.phase)*e.drift);
+ // Every third octopus is an edge hunter: it tracks predictable edge-camping,
+ // but only when approaching and with limited turning speed so dodging stays fair.
+ const edgeCamping=player.y<topEdge+65||player.y>bottomEdge-65;
+ const approaching=e.liveX>player.x-90&&e.liveX<player.x+520;
+ const desired=e.pattern===2&&edgeCamping&&approaching?player.y:sweepY;
+ const turnRate=e.pattern===2?2.6:Math.max(2.5,amplitude*e.tempo);
+ e.y=Math.max(topEdge,Math.min(bottomEdge,e.y+Math.max(-turnRate,Math.min(turnRate,desired-e.y))));
+ if(near(player.x,player.y,e.liveX,e.y,e.r+28)){if(dashTime>0){e.alive=false;score+=10;toast('⚡ DASH HIT! +10');sound(680,140,'triangle');}else hurt();}}
  checkpoint=Math.max(checkpoint,Math.floor((player.x-100)/650)*650+110);
  if(player.x>=worldWidth-130)win();camera=Math.max(0,Math.min(worldWidth-W,player.x-270));
  best=Math.max(best,score);updateHUD();}
