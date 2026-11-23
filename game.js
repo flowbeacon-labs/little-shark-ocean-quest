@@ -21,7 +21,6 @@ function loadLevel(index){level=index;score=0;lives=3;frame=0;checkpoint=110;cam
  coins=[];enemies=[];powerups=[];walls=[];
  for(let i=0;i<count;i++){let x=250+i*(worldWidth-540)/count;let y=135+rand(i*73+index*107)*260;coins.push({x,y,got:false});if(i%5===1&&x<worldWidth-160){coins.push({x:x+24,y:y-27,got:false},{x:x+49,y:y+3,got:false});}}
  for(let i=0;i<7+danger*2;i++){const x=490+i*(worldWidth-950)/(6+danger*2);enemies.push({x,baseY:140+rand(index*109+i*23)*235,y:0,phase:rand(i*53+index*11)*6,alive:true,hit:0,r:22+Math.min(10,Math.floor(index/3)*4),pattern:i%3,drift:10+rand(i*31+index*9)*35,tempo:.024+rand(i*19+3)*.025});}
- for(let i=0;i<4+Math.floor(index/2);i++){let x=760+i*(worldWidth-1190)/(3+Math.floor(index/2));walls.push({x,y:(i%2?TOP:320),w:50,h:(i%2?175:140)});}
  for(let i=0;i<2;i++)powerups.push({x:1150+i*(worldWidth-1550)/2,y:180+((i+index)%3)*70,type:i===0?'shield':'bonus',got:false});
  updateHUD();}
 function updateHUD(){el('world').textContent=`WORLD ${Math.floor(level/3)+1} · LEVEL ${level%3+1}`;el('pearls').textContent=`🟡 ${score}`;el('hearts').textContent='❤️'.repeat(Math.max(0,lives));el('best').textContent=`BEST ${Math.max(best,score)}`;el('sound').textContent=muted?'🔇':'🔊';}
@@ -61,7 +60,6 @@ function tick(){frame++;if(mode!=='playing')return;const speed=(6.0+level*.15)*(
  if(invincible>0)invincible--;
  if(frame%3===0){trail.push({x:player.x,y:player.y,age:0,dash:dashTime>0});if(trail.length>22)trail.shift();}for(const b of trail)b.age++;trail=trail.filter(b=>b.age<28);
  if(frame>comboUntil)combo=0;
- for(const w of walls){if(player.x+45>w.x&&player.x-35<w.x+w.w&&player.y+19>w.y&&player.y-19<w.y+w.h){if(dashTime>0){player.x=player.x<w.x? w.x-47:w.x+w.w+39;}else hurt();}}
  for(const c of coins){if(!c.got&&near(player.x,player.y,c.x,c.y,34)){c.got=true;combo=Math.min(10,combo+1);comboUntil=frame+145;const bonus=combo>=5?2:1;score+=bonus;if(combo===5)toast('🔥 PEARL RUSH! DOUBLE POINTS');sound(550+combo%6*75,65,'triangle');}}
  for(const p of powerups){if(!p.got&&near(player.x,player.y,p.x,p.y,40)){p.got=true;if(p.type==='shield'){shield=1;toast('🛡️ Bubble shield!');}else{score+=10;toast('✨ 10 bonus pearls!');}sound(910,180,'sine');}}
  for(const e of enemies){if(!e.alive)continue;e.y=e.baseY+Math.sin(frame*e.tempo*(1+level*.04)+e.phase)*(e.pattern===1?62:32);e.liveX=e.x+(e.pattern===0?0:Math.sin(frame*(e.tempo*.65)+e.phase)*e.drift);if(near(player.x,player.y,e.liveX,e.y,e.r+28)){if(dashTime>0){e.alive=false;score+=10;toast('⚡ DASH HIT! +10');sound(680,140,'triangle');}else hurt();}}
@@ -99,6 +97,6 @@ function drawSpeedEffects(){
   for(let i=0;i<10;i++){const x=(i*167+frame*27)%W,y=80+(i*43)%360;g.beginPath();g.moveTo(x,y);g.lineTo(x-67,y);g.stroke();}}
  g.restore();
 }
-function drawWorld(){const theme=themes[Math.floor(level/3)];drawBackground(theme);drawSpeedEffects();for(const c of coins)if(!c.got)drawPearl(c);for(const p of powerups){if(p.got)continue;const x=p.x-camera;circle(x,p.y,18,p.type==='shield'?'#80f3ff':'#ffd76a');g.font='24px system-ui';g.textAlign='center';g.fillText(p.type==='shield'?'🛡️':'⭐',x,p.y+8);}drawWalls(theme);for(const e of enemies)drawOctopus(e,theme);drawGate();drawShark();if(mode==='playing'){if(combo>=3){g.fillStyle='#fff6a8';g.font='bold 19px system-ui';g.textAlign='center';g.fillText('PEARL COMBO ×'+combo+(combo>=5?' · 2X SCORE':''),W/2,65);}g.fillStyle='#ffffffaa';g.font='bold 14px system-ui';g.textAlign='right';g.fillText(`${Math.min(100,Math.floor(player.x/(worldWidth-100)*100))}% →`,W-15,70);}}
+function drawWorld(){const theme=themes[Math.floor(level/3)];drawBackground(theme);drawSpeedEffects();for(const c of coins)if(!c.got)drawPearl(c);for(const p of powerups){if(p.got)continue;const x=p.x-camera;circle(x,p.y,18,p.type==='shield'?'#80f3ff':'#ffd76a');g.font='24px system-ui';g.textAlign='center';g.fillText(p.type==='shield'?'🛡️':'⭐',x,p.y+8);}for(const e of enemies)drawOctopus(e,theme);drawGate();drawShark();if(mode==='playing'){if(combo>=3){g.fillStyle='#fff6a8';g.font='bold 19px system-ui';g.textAlign='center';g.fillText('PEARL COMBO ×'+combo+(combo>=5?' · 2X SCORE':''),W/2,65);}g.fillStyle='#ffffffaa';g.font='bold 14px system-ui';g.textAlign='right';g.fillText(`${Math.min(100,Math.floor(player.x/(worldWidth-100)*100))}% →`,W-15,70);}}
 let prev=0,acc=0;function loop(now){const dt=Math.min(50,now-prev||16.67);prev=now;acc+=dt;while(acc>=16.667){if(mode==='playing')tick();else frame++;acc-=16.667;}drawWorld();if(performance.now()>toastUntil)el('toast').style.opacity='0';requestAnimationFrame(loop);}loadLevel(0);choices();updateHUD();requestAnimationFrame(loop);
 })();
