@@ -8,7 +8,7 @@ const themes=[
   {name:'Midnight Reef',deep:'#05142f',light:'#184f87',floor:'#486a91',coral:['#b669f4','#f38ccc','#46f5db'],fish:'#ffd46c',speed:1.35}
 ];
 const labels=['First Splash','Coral Dash','Octopus Alley','Crystal Trail','Glitter Grottos','The Deep Crossing','Moonlit Waters','Tentacle Tunnel','Ocean Champion'];
-const keyState={left:false,right:false,up:false,down:false,dash:false};
+const keyState={up:false,down:false,dash:false};
 const pointerMap=new Map();let mode='menu',selected=0,unlocked=1,best=0,totalBest=0,muted=false,audioCtx=null;
 const saveKey='little-shark-ocean-quest-v1';
 try{const data=JSON.parse(localStorage.getItem(saveKey)||'{}');unlocked=Math.min(LEVEL_COUNT,Math.max(1,Number(data.unlocked)||1));best=Math.max(0,Number(data.best)||0);totalBest=Math.max(0,Number(data.totalBest)||0);muted=!!data.muted;}catch{}
@@ -17,7 +17,7 @@ function store(){try{localStorage.setItem(saveKey,JSON.stringify({unlocked,best,
 function sound(freq=500,ms=80,type='sine',vol=.035){if(muted||mode==='menu')return;try{audioCtx??=new(window.AudioContext||window.webkitAudioContext)();if(audioCtx.state==='suspended')audioCtx.resume();const osc=audioCtx.createOscillator(),gain=audioCtx.createGain();osc.type=type;osc.frequency.setValueAtTime(freq,audioCtx.currentTime);gain.gain.setValueAtTime(vol,audioCtx.currentTime);gain.gain.exponentialRampToValueAtTime(.001,audioCtx.currentTime+ms/1000);osc.connect(gain);gain.connect(audioCtx.destination);osc.start();osc.stop(audioCtx.currentTime+ms/1000);}catch{}}
 function toast(str){toastText=str;toastUntil=performance.now()+1350;el('toast').textContent=str;el('toast').style.opacity='1';}
 function rand(seed){let t=seed+0x6D2B79F5;t=Math.imul(t^t>>>15,t|1);t^=t+Math.imul(t^t>>>7,t|61);return ((t^t>>>14)>>>0)/4294967296;}
-function loadLevel(index){level=index;score=0;lives=3;frame=0;checkpoint=110;camera=0;invincible=105;shield=0;dashTime=0;dashReady=true;combo=0;comboUntil=0;trail=[];worldWidth=2550+Math.floor(index/3)*330+(index%3)*260;player={x:110,y:248,w:67,h:37,vx:0,vy:0,face:1};const danger=index;const count=35+index*6;
+function loadLevel(index){level=index;score=0;lives=3;frame=0;checkpoint=110;camera=0;invincible=105;shield=0;dashTime=0;dashReady=true;combo=0;comboUntil=0;trail=[];worldWidth=2550+Math.floor(index/3)*330+(index%3)*260;player={x:260,y:248,w:67,h:37,vx:0,vy:0,face:1};const danger=index;const count=35+index*6;
  coins=[];enemies=[];powerups=[];walls=[];
  for(let i=0;i<count;i++){let x=250+i*(worldWidth-540)/count;let y=135+rand(i*73+index*107)*260;coins.push({x,y,got:false});if(i%5===1&&x<worldWidth-160){coins.push({x:x+24,y:y-27,got:false},{x:x+49,y:y+3,got:false});}}
  for(let i=0;i<7+danger*2;i++){const x=490+i*(worldWidth-950)/(6+danger*2);enemies.push({x,baseY:140+rand(index*109+i*23)*235,y:0,phase:rand(i*53+index*11)*6,alive:true,hit:0,r:22+Math.min(10,Math.floor(index/3)*4),pattern:i%3,drift:10+rand(i*31+index*9)*35,tempo:.024+rand(i*19+3)*.025});}
@@ -30,11 +30,11 @@ function overlay(title,description,button){el('title').textContent=title;el('des
 function start(i=selected){selected=i;loadLevel(i);mode='playing';el('overlay').style.display='none';releaseAll();sound(540,110);}
 function win(){if(mode!=='playing')return;mode='won';unlocked=Math.max(unlocked,Math.min(LEVEL_COUNT,level+2));best=Math.max(best,score);totalRun+=score;totalBest=Math.max(totalRun,totalBest);store();sound(840,290,'triangle');const all=level===LEVEL_COUNT-1;selected=all?0:level+1;overlay(all?'🏆 Ocean Champion!':'🌟 Level Complete!',`Great swimming! You collected <b>${score} pearls</b>.<br>${all?'You finished all three ocean worlds!':'Next: '+labels[selected]}.`,all?'PLAY AGAIN':'NEXT LEVEL');}
 function lose(){if(mode!=='playing')return;mode='lost';store();sound(165,280,'sawtooth');selected=level;overlay('🫧 Out of Hearts',`The octopuses got you! You collected <b>${score} pearls</b>.<br>Try this level again.`, 'TRY AGAIN');}
-function hurt(){if(invincible>0||dashTime>0)return;if(shield){shield=0;invincible=55;toast('🛡️ Shield saved you!');sound(230,120);return;}lives--;invincible=95;sound(150,220,'square');if(lives<=0){lose();return;}player.x=Math.max(checkpoint,player.x-130);player.y=240;player.vx=0;player.vy=0;toast('❤️ Watch out for octopuses!');updateHUD();}
+function hurt(){if(invincible>0||dashTime>0)return;if(shield){shield=0;invincible=55;toast('🛡️ Shield saved you!');sound(230,120);return;}lives--;invincible=95;sound(150,220,'square');if(lives<=0){lose();return;}player.x=Math.max(checkpoint,player.x-80);camera=Math.max(0,Math.min(worldWidth-W,player.x-270));player.y=240;player.vx=0;player.vy=0;toast('❤️ Watch out for octopuses!');updateHUD();}
 function resetKeys(){Object.keys(keyState).forEach(k=>keyState[k]=false);}
 function releaseAll(){pointerMap.clear();document.querySelectorAll('[data-action]').forEach(b=>b.classList.remove('pressed'));resetKeys();}
 function syncPointers(){let pressed=new Set(pointerMap.values());for(const k of Object.keys(keyState))keyState[k]=pressed.has(k)||!!keyboard[k];document.querySelectorAll('[data-action]').forEach(b=>b.classList.toggle('pressed',pressed.has(b.dataset.action)));}
-const keyboard={left:false,right:false,up:false,down:false,dash:false};
+const keyboard={up:false,down:false,dash:false};
 for(const button of document.querySelectorAll('[data-action]')){
  button.addEventListener('pointerdown',e=>{e.preventDefault();if(mode!=='playing')return;pointerMap.set(e.pointerId,button.dataset.action);try{button.setPointerCapture(e.pointerId);}catch{}syncPointers();});
  for(const ev of ['pointerup','pointercancel','lostpointercapture'])button.addEventListener(ev,e=>{if(pointerMap.delete(e.pointerId))syncPointers();});
@@ -44,7 +44,7 @@ window.addEventListener('blur',()=>{releaseAll();Object.keys(keyboard).forEach(k
 document.addEventListener('visibilitychange',()=>{if(document.hidden){releaseAll();Object.keys(keyboard).forEach(k=>keyboard[k]=false);if(mode==='playing')pause();}});
 document.addEventListener('contextmenu',e=>{if(e.target.closest('button,canvas,#controls'))e.preventDefault();});
 document.addEventListener('selectstart',e=>{if(e.target.closest('button,#controls,canvas'))e.preventDefault();});
-const codeMap={ArrowLeft:'left',KeyA:'left',ArrowRight:'right',KeyD:'right',ArrowUp:'up',KeyW:'up',ArrowDown:'down',KeyS:'down',Space:'dash'};
+const codeMap={ArrowUp:'up',KeyW:'up',ArrowDown:'down',KeyS:'down',Space:'dash'};
 document.addEventListener('keydown',e=>{const k=codeMap[e.code];if(k){e.preventDefault();keyboard[k]=true;syncPointers();}if(e.code==='KeyP'&&!e.repeat)pause();});
 document.addEventListener('keyup',e=>{const k=codeMap[e.code];if(k){e.preventDefault();keyboard[k]=false;syncPointers();}});
 function pause(){if(mode==='playing'){mode='paused';releaseAll();overlay('⏸️ Paused','Your ocean adventure is safe. Resume when ready.','RESUME');}else if(mode==='paused'){mode='playing';el('overlay').style.display='none';}}
@@ -53,11 +53,11 @@ el('sound').addEventListener('click',()=>{muted=!muted;store();updateHUD();});
 el('fullscreen').addEventListener('click',async()=>{try{if(document.fullscreenElement)await document.exitFullscreen();else if(document.documentElement.requestFullscreen)await document.documentElement.requestFullscreen();else throw Error('not supported');}catch{toast('For iPhone: Safari → Share → Add to Home Screen');}});
 el('primary').addEventListener('click',()=>{if(mode==='paused'){pause();return;}start(selected);});
 const near=(x,y,cx,cy,r)=>Math.hypot(x-cx,y-cy)<r;
-function tick(){frame++;if(mode!=='playing')return;const speed=(7.1+level*.15)*(shield?1.03:1);let xAxis=(keyState.right?1:0)-(keyState.left?1:0),yAxis=(keyState.down?1:0)-(keyState.up?1:0);const norm=Math.hypot(xAxis,yAxis)||1;player.vx=xAxis/norm*speed;player.vy=yAxis/norm*speed;
+function tick(){frame++;if(mode!=='playing')return;const speed=(6.0+level*.15)*(shield?1.03:1);const yAxis=(keyState.down?1:0)-(keyState.up?1:0);player.vx=speed;player.vy=yAxis*7.1;
  if(keyState.dash&&dashReady){dashTime=24;dashReady=false;sound(750,140,'sawtooth');}if(!keyState.dash)dashReady=true;
  let multiplier=dashTime>0?3.1:1;if(dashTime>0)dashTime--;
- player.face=player.vx<0?-1:player.vx>0?1:player.face;
- player.x=Math.max(40,Math.min(worldWidth-115,player.x+player.vx*multiplier));player.y=Math.max(TOP+20,Math.min(BOTTOM-38,player.y+player.vy*multiplier));
+ player.face=1;
+ player.x=Math.min(worldWidth-115,player.x+player.vx*multiplier);player.y=Math.max(TOP+20,Math.min(BOTTOM-38,player.y+player.vy));
  if(invincible>0)invincible--;
  if(frame%3===0){trail.push({x:player.x,y:player.y,age:0,dash:dashTime>0});if(trail.length>22)trail.shift();}for(const b of trail)b.age++;trail=trail.filter(b=>b.age<28);
  if(frame>comboUntil)combo=0;
@@ -66,7 +66,7 @@ function tick(){frame++;if(mode!=='playing')return;const speed=(7.1+level*.15)*(
  for(const p of powerups){if(!p.got&&near(player.x,player.y,p.x,p.y,40)){p.got=true;if(p.type==='shield'){shield=1;toast('🛡️ Bubble shield!');}else{score+=10;toast('✨ 10 bonus pearls!');}sound(910,180,'sine');}}
  for(const e of enemies){if(!e.alive)continue;e.y=e.baseY+Math.sin(frame*e.tempo*(1+level*.04)+e.phase)*(e.pattern===1?62:32);e.liveX=e.x+(e.pattern===0?0:Math.sin(frame*(e.tempo*.65)+e.phase)*e.drift);if(near(player.x,player.y,e.liveX,e.y,e.r+28)){if(dashTime>0){e.alive=false;score+=10;toast('⚡ DASH HIT! +10');sound(680,140,'triangle');}else hurt();}}
  checkpoint=Math.max(checkpoint,Math.floor((player.x-100)/650)*650+110);
- if(player.x>=worldWidth-130)win();camera+=(Math.max(0,Math.min(worldWidth-W,player.x-280))-camera)*.115;
+ if(player.x>=worldWidth-130)win();camera=Math.max(0,Math.min(worldWidth-W,player.x-270));
  best=Math.max(best,score);updateHUD();}
 function circle(x,y,r,color){g.fillStyle=color;g.beginPath();g.arc(x,y,r,0,2*PI);g.fill();}
 function ellipse(x,y,rx,ry,color){g.fillStyle=color;g.beginPath();g.ellipse(x,y,rx,ry,0,0,2*PI);g.fill();}
