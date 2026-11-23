@@ -28,3 +28,11 @@
  #controls .swim-side{gap:8px}
  #controls>#dash{margin-bottom:7px}
 }
+
+/* Auto Swim v5: UP (left), DASH (center), DOWN (right). No horizontal controls. */
+#controls{display:grid!important;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr)!important;align-items:end!important;gap:8px!important;justify-content:initial!important}
+#controls>.control{position:static!important;transform:none!important;display:grid;place-items:center;pointer-events:auto}
+#controls>[data-action="up"]{grid-column:1;grid-row:1;justify-self:start}
+#controls>#dash{grid-column:2;grid-row:1;justify-self:center;align-self:end;margin:0 0 3px!important;pointer-events:auto}
+#controls>[data-action="down"]{grid-column:3;grid-row:1;justify-self:end}
+@media(max-height:450px){#controls>.control{width:48px;height:46px}#controls>#dash{padding:10px 7px}}
