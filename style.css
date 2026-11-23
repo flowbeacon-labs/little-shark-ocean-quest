@@ -10,3 +10,21 @@
 #main-actions #dash{justify-self:center;min-width:clamp(96px,18vw,145px)}
 @media (max-width:600px) and (orientation:portrait){#move-pad{height:auto;width:100%}#dash{margin-bottom:0}}
 @media (max-height:450px){#move-pad{height:auto}#controls{gap:4px}}
+
+/* Side-paired movement controls: UP/LEFT | DASH | DOWN/RIGHT. */
+#controls{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);align-items:end;justify-content:initial;gap:clamp(6px,2vw,20px);pointer-events:none}
+#controls .swim-side{display:flex;flex-direction:column;gap:clamp(5px,1.3vh,12px);pointer-events:none}
+#controls .swim-left{grid-column:1;justify-self:start;align-items:flex-start}
+#controls .swim-right{grid-column:3;justify-self:end;align-items:flex-end}
+#controls .swim-side .control{position:static;transform:none;display:grid;place-items:center;pointer-events:auto}
+#controls>#dash{grid-column:2;grid-row:1;justify-self:center;align-self:end;margin:0 0 clamp(4px,1.4vh,15px);min-width:clamp(92px,15vw,145px)}
+@media(max-height:450px){
+ #controls .swim-side .control{width:45px;height:43px}
+ #controls .swim-side{gap:5px}
+ #controls>#dash{padding:10px 7px;margin-bottom:4px}
+}
+@media(max-width:600px) and (orientation:portrait){
+ #controls{bottom:max(27px,env(safe-area-inset-bottom))}
+ #controls .swim-side{gap:8px}
+ #controls>#dash{margin-bottom:7px}
+}
