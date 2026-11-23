@@ -12,13 +12,13 @@ const keyState={up:false,down:false,dash:false};
 const pointerMap=new Map();let mode='menu',selected=0,unlocked=1,best=0,totalBest=0,muted=false,audioCtx=null;
 const saveKey='little-shark-ocean-quest-v1';
 try{const data=JSON.parse(localStorage.getItem(saveKey)||'{}');unlocked=Math.min(LEVEL_COUNT,Math.max(1,Number(data.unlocked)||1));best=Math.max(0,Number(data.best)||0);totalBest=Math.max(0,Number(data.totalBest)||0);muted=!!data.muted;}catch{}
-let level=0,worldWidth=3500,player={},coins=[],enemies=[],powerups=[],walls=[],checkpoint=180,camera=0,score=0,lives=3,frame=0,invincible=0,shield=0,dashTime=0,dashReady=true,toastUntil=0,toastText='',totalRun=0,combo=0,comboUntil=0,trail=[];
+let level=0,worldWidth=3500,player={},coins=[],enemies=[],powerups=[],checkpoint=180,camera=0,score=0,lives=3,frame=0,invincible=0,shield=0,dashTime=0,dashReady=true,toastUntil=0,toastText='',totalRun=0,combo=0,comboUntil=0,trail=[];
 function store(){try{localStorage.setItem(saveKey,JSON.stringify({unlocked,best,totalBest,muted}));}catch{}}
 function sound(freq=500,ms=80,type='sine',vol=.035){if(muted||mode==='menu')return;try{audioCtx??=new(window.AudioContext||window.webkitAudioContext)();if(audioCtx.state==='suspended')audioCtx.resume();const osc=audioCtx.createOscillator(),gain=audioCtx.createGain();osc.type=type;osc.frequency.setValueAtTime(freq,audioCtx.currentTime);gain.gain.setValueAtTime(vol,audioCtx.currentTime);gain.gain.exponentialRampToValueAtTime(.001,audioCtx.currentTime+ms/1000);osc.connect(gain);gain.connect(audioCtx.destination);osc.start();osc.stop(audioCtx.currentTime+ms/1000);}catch{}}
 function toast(str){toastText=str;toastUntil=performance.now()+1350;el('toast').textContent=str;el('toast').style.opacity='1';}
 function rand(seed){let t=seed+0x6D2B79F5;t=Math.imul(t^t>>>15,t|1);t^=t+Math.imul(t^t>>>7,t|61);return ((t^t>>>14)>>>0)/4294967296;}
 function loadLevel(index){level=index;score=0;lives=3;frame=0;checkpoint=110;camera=0;invincible=105;shield=0;dashTime=0;dashReady=true;combo=0;comboUntil=0;trail=[];worldWidth=2550+Math.floor(index/3)*330+(index%3)*260;player={x:260,y:248,w:67,h:37,vx:0,vy:0,face:1};const danger=index;const count=35+index*6;
- coins=[];enemies=[];powerups=[];walls=[];
+ coins=[];enemies=[];powerups=[];
  for(let i=0;i<count;i++){let x=250+i*(worldWidth-540)/count;let y=135+rand(i*73+index*107)*260;coins.push({x,y,got:false});if(i%5===1&&x<worldWidth-160){coins.push({x:x+24,y:y-27,got:false},{x:x+49,y:y+3,got:false});}}
  for(let i=0;i<7+danger*2;i++){const x=490+i*(worldWidth-950)/(6+danger*2);enemies.push({x,baseY:140+rand(index*109+i*23)*235,y:0,phase:rand(i*53+index*11)*6,alive:true,hit:0,r:22+Math.min(10,Math.floor(index/3)*4),pattern:i%3,drift:10+rand(i*31+index*9)*35,tempo:.024+rand(i*19+3)*.025});}
  for(let i=0;i<2;i++)powerups.push({x:1150+i*(worldWidth-1550)/2,y:180+((i+index)%3)*70,type:i===0?'shield':'bonus',got:false});
@@ -87,7 +87,6 @@ function drawShark(){const x=player.x-camera,y=player.y;if(invincible&&Math.floo
  if(dashTime>0){g.strokeStyle='#f6ffff';g.lineWidth=3;for(let i=0;i<3;i++){g.beginPath();g.moveTo(-90-i*15,-10+i*11);g.lineTo(-55-i*12,-10+i*11);g.stroke();}}
  g.restore();}
 function drawGate(){let x=worldWidth-90-camera;g.save();g.translate(x,268);g.shadowColor='#7ff5fb';g.shadowBlur=30;g.lineWidth=15;g.strokeStyle='#8ef2fd';g.beginPath();g.ellipse(0,0,35,92,0,0,PI*2);g.stroke();g.shadowBlur=0;g.font='bold 16px system-ui';g.fillStyle='#e8ffff';g.textAlign='center';g.fillText('FINISH',0,-113);g.restore();}
-function drawWalls(t){for(const w of walls){let x=w.x-camera;if(x<-100||x>W+100)continue;g.fillStyle=t.coral[1];g.fillRect(x,w.y,w.w,w.h);g.fillStyle='#ffffff34';for(let y=w.y+20;y<w.y+w.h;y+=28)g.fillRect(x+9,y,w.w-19,4);}}
 function drawSpeedEffects(){
  g.save();
  for(const b of trail){const x=b.x-camera,y=b.y;if(x<-50||x>W+50)continue;const fade=1-b.age/28;
